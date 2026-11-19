@@ -1,120 +1,71 @@
-import { getGold } from "./api.js";
+import { request } from "./api.js";
 
-let pricescontainer = document.getElementById("prices-container");
-let requeststatus = document.getElementById("request-status");
+let articlescontainer = document.getElementById("articles-container");
+let searchinput = document.getElementById("search-input");
+let statusfilter = document.getElementById("status-filter");
 
-let currencyselect = document.getElementById("currency-select");
+let articles = [];
+async function getArticles() {
+    articles = await request("/posts");
 
+    articles = articles.map(article => {
+        return {
+            ...article,
+            date: "2026-11-19",
+            status: "Disponible",
+            price: 1500
+        };
+    });
+        displayArticles(articles);
+}
+getArticles()
 
-requeststatus.textContent = "Chargement des prix...";
-const data = await getGold();
-
-
-function displayPrices(data){
-    let previousPrice = JSON.parse(localStorage.getItem("metal-prices")) || []
-    let selectedCurrency = currencyselect.value;
-    let metals = [
-        {
-            name:"Gold",
-            price:data.per_gram_usd,
-            currency:"USD"
-        },
-        {
-            name:"Silver",
-            price:data.silver_usd_oz/31.1035,
-            currency:"USD"
-        }
-    ]
-    pricescontainer.innerHTML = "";
-    metals.forEach(product =>{
-        let previousMetal =   previousPrice.find(element => element.name === product.name)
-        let convertedPrice = product.price * data.fx_rates[selectedCurrency];
-
-        let displayPourcentage = document.createElement("p");
-        displayPourcentage.classList.add("purcentage");
-
-
-        let variation = 0;
-        let variationTexte;
-        let pourcentage ;
-        let pourcentageTexte;
-        let fleche = "—";
-
-        if (previousMetal) {
-        variation = product.price - previousMetal.price;
-        variationTexte = variation.toFixed(3)+" "+ selectedCurrency ;
-        pourcentage=(variation/previousMetal.price)*100
-        pourcentageTexte = pourcentage.toFixed(2) +"%"
-            
-        
-        if (variation > 0) {
-        fleche = "↑";
-        displayPourcentage.classList.add("up");
-        }else if (variation < 0) {
-        fleche = "↓";
-        displayPourcentage.classList.add("down");
-        } else {
-        fleche = "→";
-        displayPourcentage.classList.add("stable");
-        }
-        }else {
-        variationTexte = "Non disponible";
-        pourcentageTexte = "Non disponible";
-        }
-
-        currencyselect.addEventListener("change", function(){
-        displayPrices(data);
-        });
-
-        const card = document.createElement("div")
+function displayArticles(articles){
+    articles.forEach((article) => {
+        const card = document.createElement("div");
         card.classList.add("card");
 
-        let title = document.createElement("h2")
-        title.classList.add("name",product.name.toLocaleLowerCase())
-        title.textContent=product.name;
+        const title =  document.createElement("h2");
+        title.classList.add("title");
+        title.textContent = article.title;
 
-        const price = document.createElement("p");
+        const discription =  document.createElement("p");
+        discription.classList.add("discription");
+        discription.textContent = article.body;
+
+        const identifient =  document.createElement("span");
+        identifient.classList.add("id");
+        identifient.textContent = article.id;
+
+        const status = document.createElement("span");
+        status.classList.add("status");
+        status.textContent = article.status;
+
+        const date = document.createElement("h3");
+        date.classList.add("date");
+        date.textContent=article.date;
+
+        const price = document.createElement("span");
         price.classList.add("price");
-        price.textContent = convertedPrice.toFixed(3);
+        price.textContent=article.price
 
-        const currency = document.createElement("span");
-        currency.classList.add("currency");
-        currency.textContent = `${selectedCurrency} / gram`;
-
-        const update = document.createElement("p");
-        update.classList.add("update-at")
-        update.textContent= new Date(data.updated_at).toLocaleString("fr-FR");
-
-        let displayVariation = document.createElement("p")
-        displayVariation.classList.add("variation")
-        displayVariation.textContent=  variationTexte
-
-
-        displayPourcentage.textContent= fleche + " " +pourcentageTexte;
-
-        card.append(title, price, currency, displayVariation, displayPourcentage, update);
-        pricescontainer.appendChild(card)
-    })
-    localStorage.setItem("metal-prices", JSON.stringify(metals));
-
-
-    requeststatus.textContent="Prix actualisés avec succès";
-
+        card.append(title, discription,date,status,price, identifient);
+        articlescontainer.appendChild(card)
+    });
 }
 
 
-
-
-if(data == undefined){
-    requeststatus.textContent="Erreur lors du chargement des prix. Veuillez réessayer"
-}else{
-    displayPrices(data)
-
+async function getArticleById(id){
+const article = await request(`/posts/${id}`);
+return article;
 }
 
 
-
-
-
+searchinput.addEventListener("input", function() {
+    let input = searchinput.value;
+    let result = articles.filter(article =>article.title.includes(input.toLowerCase()))
+    articlescontainer.textContent = "";
+    displayArticles(result);
+});
 
 
