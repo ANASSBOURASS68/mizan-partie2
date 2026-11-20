@@ -61,11 +61,24 @@ return article;
 }
 
 
-searchinput.addEventListener("input", function() {
-    let input = searchinput.value;
-    let result = articles.filter(article =>article.title.includes(input.toLowerCase()))
+
+
+function updateArticles() {
+let result = [...articles];
+let input = searchinput.value.toLowerCase();
+result= result.filter(article =>article.title.toLowerCase().includes(input))
+
+let selectStatus = statusfilter.value;
+    if (selectStatus !== "all") {
+        result = result.filter(article =>article.status === selectStatus);
+    }
     articlescontainer.textContent = "";
     displayArticles(result);
-});
+}
+
+searchinput.addEventListener("input", updateArticles);
+
+statusfilter.addEventListener("change", updateArticles);
+
 
 
